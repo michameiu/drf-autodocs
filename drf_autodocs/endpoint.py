@@ -85,7 +85,10 @@ class Endpoint:
 
     @staticmethod
     def _get_complete_path(pattern, prefix=None):
-        regex = pattern._regex if hasattr(pattern, "_regex") else pattern.pattern._regex
+        try :
+            regex = pattern._regex if hasattr(pattern, "_regex") else pattern.pattern._regex
+        except :
+            regex = str(pattern.pattern)
         return prefix + simplify_regex(regex)
 
     def _get_serializer_fields(self, serializer):
