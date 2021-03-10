@@ -17,4 +17,4 @@ class Book(models.Model):
     author = models.CharField(max_length=50)
     name = models.CharField(max_length=50)
     uuid = models.UUIDField(default=uuid.uuid4)
-    library = models.ForeignKey(Library, related_name='books')
+    library = models.ForeignKey(Library, related_name='books',on_delete=models.CASCADE)

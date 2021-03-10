@@ -16,6 +16,6 @@ university_urlpatterns = [
 ]
 
 urlpatterns = [
-    url(r'^library/', include(library_urlpatterns, namespace='library')),
-    url(r'^university/', include(university_urlpatterns, namespace='university')),
+    url(r'^library/', include(library_urlpatterns, )),
+    url(r'^university/', include(university_urlpatterns,)),
 ]

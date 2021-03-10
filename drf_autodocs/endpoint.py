@@ -127,7 +127,7 @@ class Endpoint:
                             field.help_text if field.help_text else "",
                             field.queryset.model.__name__)
                         )
-                    elif hasattr(serializer.Meta.model, key):
+                    elif hasattr(serializer.Meta.model, key) and hasattr(getattr(serializer.Meta.model, key), "field"):
                         field_data['help_text'] = ('{}\nRequires/renders pk(id) of {} as integer'.format(
                             field.help_text if field.help_text else "",
                             getattr(serializer.Meta.model, key).field.related_model.__name__)
