@@ -12,7 +12,7 @@ setup(
     description="Extensible auto django rest framework api generator",
     long_description=open("README.md").read(),
     install_requires=[
-        'django>=3.1.4',
+        'django>=3.0.8',
         'markdown>=2.6.7',
         'addict>=2.0.0',
         'djangorestframework>=3'
