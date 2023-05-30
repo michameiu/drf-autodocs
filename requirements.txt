@@ -1,4 +1,6 @@
-django>=3.1.4
+django==3.1.4
 djangorestframework>=3.2.12
 markdown==2.6.7
 addict==2.0.0
+django-filter==2.3.0
+django-background-tasks==1.2.5

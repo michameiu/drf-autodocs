@@ -20,6 +20,19 @@
             <div class="collapsible-body">
                 <div class="row tabs-wrapper">
                     <h3>{{ endpoint.name }}</h3>
+
+                    <div class="tooltip">
+                    <a  onmouseout="outFunc('myTooltip{{endpoint.name}}')" onclick="copyText('{{ endpoint.complete_path }}','myTooltip{{endpoint.name}}')">
+                        <span class="tooltiptext" id="myTooltip{{endpoint.name}}">Copy to clipboard</span>
+                        <a class=" btn btn-method options" onmouseout="outFunc('myTooltip{{endpoint.name}}')" onclick="copyText('{{ endpoint.complete_path }}','myTooltip{{endpoint.name}}')"> Copy Link </a>
+                    </a>
+                     </div>
+
+                     <a class="waves-effect waves-light btn btn-method" href="{{ endpoint.complete_path }}" target="_blank">Open Link</a>
+
+                     &nbsp;
+                     <hr>
+
                     <div class="col s12">
                         <ul class="tabs">
                             <li class="tab col">
@@ -108,20 +121,20 @@
                             <tbody>
                             {% for filter in endpoint.filter_backends%}
                                 <tr>
-                                    <td>{{ filter.0 }}</td>
-                                    <td>{{ filter.1|markdownify|keep_formatting }}</td>
+                                    <td style="padding-left:10px">{{ filter.0 }}</td>
+                                    <td style="padding-left:10px">{{ filter.1|markdownify|keep_formatting }}</td>
                                 </tr>
                             {% endfor %}
                             </tbody>
                         </table>
-                    </div>
+                    </div> 
                     {% endif %}
                     {% if endpoint.extra_url_params %}
                     <div id="{{ "extra_url_params-"|concat:endpoint.id }}" class="col s12 tab-content">
                         {% if endpoint.extra_url_params %}
                             <table class="responsive-table">
                                 <thead>
-                                <tr>
+                                <tr> 
                                     <th>Param name</th>
                                     <th>Type</th>
                                     <th>Description</th>

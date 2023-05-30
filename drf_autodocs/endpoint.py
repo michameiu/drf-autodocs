@@ -5,6 +5,12 @@ from django.contrib.admindocs.views import simplify_regex
 from drf_autodocs import builtin_docs
 from django.conf import settings
 
+import traceback
+
+
+class dummy_request(object):
+    query_params = {}
+
 
 class Endpoint:
     counter = 0
@@ -20,27 +26,27 @@ class Endpoint:
 
         self.name = self._get_endpoint_name()
 
-        if hasattr(self.view.cls, 'extra_url_params'):
+        if hasattr(self.view.cls, "extra_url_params"):
             self.extra_url_params = self.view.cls.extra_url_params
 
-        if hasattr(self.view.cls, 'filter_backends') and len(getattr(self.view.cls, 'filter_backends')) > 0:
+        if hasattr(self.view.cls, "filter_backends") and len(getattr(self.view.cls, "filter_backends")) > 0:
             self._collect_filter_backends()
 
-        if hasattr(self.view.cls, 'authentication_classes') and self.view.cls.authentication_classes is not None:
+        if hasattr(self.view.cls, "authentication_classes") and self.view.cls.authentication_classes is not None:
             self.authentication_classes = [(cls.__name__, getdoc(cls)) for cls in self.view.cls.authentication_classes]
 
-        if hasattr(self.view.cls, 'permission_classes') and self.view.cls.permission_classes is not None:
+        if hasattr(self.view.cls, "permission_classes") and self.view.cls.permission_classes is not None:
             self.permission_classes = [(cls.__name__, getdoc(cls)) for cls in self.view.cls.permission_classes]
 
         self.docstring = self._get_doc()
 
-        if hasattr(self.view.cls, 'serializer_class') and self.view.cls.serializer_class is not None:
-            if not set(self.methods) == {'GET', 'OPTIONS'}:
+        if hasattr(self.view.cls, "serializer_class") and self.view.cls.serializer_class is not None:
+            if not set(self.methods) == {"GET", "OPTIONS"}:
                 self.input_fields = self._get_serializer_fields(self.view.cls.serializer_class())
             else:
                 self.output_fields = self._get_serializer_fields(self.view.cls.serializer_class())
 
-        if hasattr(self.view.cls, 'response_serializer_class'):
+        if hasattr(self.view.cls, "response_serializer_class"):
             self.output_fields = self._get_serializer_fields(self.view.cls.response_serializer_class())
 
     def _get_doc(self):
@@ -51,34 +57,49 @@ class Endpoint:
             return no_description
 
     def _get_endpoint_name(self):
-        if hasattr(settings, 'AUTODOCS_ENDPOINT_NAMES') and settings.AUTODOCS_ENDPOINT_NAMES == 'view':
-            ret = ''.join(
-                [
-                    (' %s' % c if c.isupper() and not self.view.__name__.startswith(c) else c)
-                    for c in self.view.__name__
-                    ]
-            ).replace('-', ' ').replace('_', ' ').title()
+        if hasattr(settings, "AUTODOCS_ENDPOINT_NAMES") and settings.AUTODOCS_ENDPOINT_NAMES == "view":
+            ret = "".join([(" %s" % c if c.isupper() and not self.view.__name__.startswith(c) else c) for c in self.view.__name__]).replace("-", " ").replace("_", " ").title()
             return ret
         else:
-            return self.pattern.name.replace('-', ' ').replace('_', ' ').title()
+            return self.pattern.name.replace("-", " ").replace("_", " ").title()
 
     def _collect_filter_backends(self):
         self.filter_backends = []
+
         for f in self.view.cls.filter_backends:
-            if f in builtin_docs.filter_backends:
-                if f is SearchFilter:
-                    if hasattr(self.view.cls, 'search_filters'):
-                        doc = builtin_docs.filter_backends[f](self.view.cls.search_filters)
-                    else:
-                        doc = "Developer didn't specify any fields for search"
-                else:
-                    doc = builtin_docs.filter_backends[f]
-                self.filter_backends.append((f.__name__, doc))
-            else:
+            try:
+                print(f.__name__)
+
+                # MyDjangoFilterBackend().get_filterset(self.request, self.queryset, self)
+
+                filter_class = f().get_filterset(dummy_request(), self.view.cls.queryset, self.view.cls)
+
+                filters = [(key, "{}".format(key.replace("_", " ").title())) for key, ft in filter_class.get_filters().items()]
+                # print(filters)
+                for filter in filters:
+                    self.filter_backends.append(filter)
+
+            except Exception as e:
+                print(traceback.format_exc())
+                print(e)
                 self.filter_backends.append((f.__name__, getdoc(f)))
 
+            # self.filter_backends.append((f.__name__, getdoc(f)))
+
+            # if f in builtin_docs.filter_backends:
+            #     if f is SearchFilter:
+            #         if hasattr(self.view.cls, "search_filters"):
+            #             doc = builtin_docs.filter_backends[f](self.view.cls.search_filters)
+            #         else:
+            #             doc = "Developer didn't specify any fields for search"
+            #     else:
+            #         doc = builtin_docs.filter_backends[f]
+            #     self.filter_backends.append((f.__name__, doc))
+            # else:
+            #     self.filter_backends.append((f.__name__, getdoc(f)))
+
     def _get_allowed_methods(self):
-        if hasattr(self.view, 'cls'):
+        if hasattr(self.view, "cls"):
             return [m.upper() for m in self.view.cls.http_method_names if hasattr(self.view.cls, m)]
         else:
             return []
@@ -88,9 +109,9 @@ class Endpoint:
         try:
             if hasattr(pattern, "_regex"):
                 regex = pattern._regex
-            elif hasattr(pattern.pattern, "_regex"): 
+            elif hasattr(pattern.pattern, "_regex"):
                 regex = pattern.pattern._regex
-            else :
+            else:
                 regex = str(pattern.pattern)
         except:
             regex = ""
@@ -99,9 +120,9 @@ class Endpoint:
     def _get_serializer_fields(self, serializer):
         fields = []
 
-        if hasattr(serializer, 'get_fields'):
+        if hasattr(serializer, "get_fields"):
             for key, field in serializer.get_fields().items():
-                to_many_relation = True if hasattr(field, 'many') else False
+                to_many_relation = True if hasattr(field, "many") else False
                 sub_fields = []
 
                 if to_many_relation:
@@ -116,39 +137,28 @@ class Endpoint:
                     "required": field.required,
                     "to_many_relation": to_many_relation,
                     "help_text": field.help_text,
-                    "write_only": field.write_only
+                    "write_only": field.write_only,
                 }
                 if isinstance(field, ChoiceField) and not isinstance(field, (RelatedField, ManyRelatedField)):
-                    field_data['choices'] = field.choices
+                    field_data["choices"] = field.choices
 
                 if isinstance(field, RelatedField):
-                    if hasattr(field, 'queryset') and hasattr(field.queryset, 'model'):
-                        field_data['help_text'] = ('{}\nRequires/renders pk(id) of {} as integer'.format(
-                            field.help_text if field.help_text else "",
-                            field.queryset.model.__name__)
-                        )
+                    if hasattr(field, "queryset") and hasattr(field.queryset, "model"):
+                        field_data["help_text"] = "{}\nRequires/renders pk(id) of {} as integer".format(field.help_text if field.help_text else "", field.queryset.model.__name__)
                     elif hasattr(serializer.Meta.model, key) and hasattr(getattr(serializer.Meta.model, key), "field"):
-                        field_data['help_text'] = ('{}\nRequires/renders pk(id) of {} as integer'.format(
-                            field.help_text if field.help_text else "",
-                            getattr(serializer.Meta.model, key).field.related_model.__name__)
+                        field_data["help_text"] = "{}\nRequires/renders pk(id) of {} as integer".format(
+                            field.help_text if field.help_text else "", getattr(serializer.Meta.model, key).field.related_model.__name__
                         )
                 elif isinstance(field, ManyRelatedField):
-                    if hasattr(field, 'queryset') and hasattr(field.queryset, 'model'):
-                        field_data['help_text'] = ("{}\nRequires/renders list of pk's(id's) of {} objects.".format(
-                            field.help_text if field.help_text else "",
-                            field.child_relation.queryset.model.__name__)
+                    if hasattr(field, "queryset") and hasattr(field.queryset, "model"):
+                        field_data["help_text"] = "{}\nRequires/renders list of pk's(id's) of {} objects.".format(
+                            field.help_text if field.help_text else "", field.child_relation.queryset.model.__name__
                         )
                     elif hasattr(serializer.Meta.model, key):
-                        field_data['help_text'] = ('{}\nRequires/renders pk(id) of {} as integer'.format(
-                            field.help_text if field.help_text else "",
-                            getattr(serializer.Meta.model, key).field.related_model.__name__)
+                        field_data["help_text"] = "{}\nRequires/renders pk(id) of {} as integer".format(
+                            field.help_text if field.help_text else "", getattr(serializer.Meta.model, key).field.related_model.__name__
                         )
 
                 fields.append(field_data)
 
         return fields
-
-
-
-
-
