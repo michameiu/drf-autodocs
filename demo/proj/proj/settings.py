@@ -44,7 +44,9 @@ INSTALLED_APPS = [
     "restapi",
     "background_task",
 ]
-
+DOCS_TITLE = "DRF Auto Docs"
+DOCS_SUB_TITLE = "MAAAN..."
+DOCS_LOGO = "https://avatars.githubusercontent.com/u/24269907?s=200&v=4"
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
